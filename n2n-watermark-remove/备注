@@ -1,0 +1,14 @@
+教程路径 https://www.zhihu.com/question/333086833
+
+需要安装 conda install tensorflow-gpu==1.9
+1.9  CUDA Toolkit 9.0 cuDNN v7.0
+
+
+流程：
+1、训练生成.hdf5 的水印模型
+2、使用.hdf5的水印模型去除水印
+
+
+
+
+
