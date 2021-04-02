@@ -1,7 +1,11 @@
 import os
+import shutil
 
 import requests
 import json
+
+from PIL import Image
+from openpyxl import load_workbook
 from pyquery import PyQuery as pq
 
 URL = "https://detail.1688.com/offer/569380999718.html?spm=a2615.7691456.autotrace-offerGeneral.22.7fb13356ft1KPL"
@@ -53,6 +57,27 @@ def dir_download_images(a_url, a_filename, a_save_dir="C:\\Users\\Baijb\\Desktop
         f.write(imgs_data.content)
 
 
+def resize_pic(pic_path, width, height, rtocut_flag=False):
+    """
+    缩放图片
+    :param pic_path: 图片路径
+    :param width: 宽
+    :param height: 高
+    :param rtocut_flag:按比例裁剪
+    :return:
+    """
+    image = Image.open(pic_path)
+    base_width = width
+    h_size = height
+    if rtocut_flag:
+        w_percent = base_width / float(image.size[0])
+        h_size = int(float(image.size[1]) * float(w_percent))
+
+    # 默认情况下，PIL使用Image.NEAREST过滤器进行大小调整，从而获得良好的性能，但质量很差。
+    image = image.resize((base_width, h_size), Image.ANTIALIAS)
+    pass
+
+
 def grab_webpage(url):
     """
         获取指定的1688路径下的网页信息
@@ -91,18 +116,62 @@ def grab_webpage(url):
     stock_inf = []
     for tr in stock_inf_tr:
         name = pq(tr).find("td.name").text()
-        price = pq(tr).find("td.price").text()
+        price = pq(tr).find("td.price em.value").text()
         count = pq(tr).find("td.count").text()
-        tmp = {"name": name, "price": price, "count": count}
+        tmp = {"name": name, "price": price, "count": count, "weight": "0"}  # weight 克重暂时使用0来进行测算
         stock_inf.append(tmp)
     webpage_info[STOCK_INF] = stock_inf
     return webpage_info
 
 
 # Press the green button in the gutter to run the script.
-def handel_pic_info(page_info):
-    # dir_download_images(pic_url, r"2详情/" + str(img_idx) + "_" + pic_name)
-    pass
+def handel_pic_info(page_info, base_path="C:\\Users\\Baijb\\Desktop\\产品模板\\"):
+    """
+    处理图片信息
+    :param page_info: 图片名称及下载路径
+    :param base_path: 文件保存路径
+    :return:
+    """
+    main_pic_inf = page_info[MAIN_PIC]
+    main_pic_basepath = base_path + "主图\\"
+    for pic in main_pic_inf:
+        dir_download_images(pic["pic_url"], pic["pic_name"], main_pic_basepath)
+        if os.path.exists(main_pic_basepath + pic["pic_name"]):
+            resize_pic(main_pic_basepath + pic["pic_name"], 800, 800)
+
+    desc_pic_inf = page_info[DESC_PIC]
+    desc_pic_basepath = base_path + "详情\\"
+    for pic in desc_pic_inf:
+        dir_download_images(pic["pic_url"], pic["pic_name"], desc_pic_basepath)
+        if os.path.exists(main_pic_basepath + pic["pic_name"]):
+            resize_pic(main_pic_basepath + pic["pic_name"], 700, 700, True)
+
+    return
+
+
+def handel_stock_inf(stock_inf_lst, base_path="C:\\Users\\Baijb\\Desktop\\产品模板\\"):
+    """
+    复制成本信息模板，向指定位置设置库存信息并计算售卖价
+        公式：
+    :param stock_inf_lst: 库存信息列表
+    :param base_path:文件保存路径
+    :return:
+    """
+    shutil.copyfile("\\template.xls", base_path + "成本计算.xls")
+    wb = load_workbook(base_path + "成本计算.xls")
+    ws = wb.get_sheet_by_name('成本')
+    # 从L13开始设置库存信息
+    idx = 13
+    for tk_inf in stock_inf_lst:
+        # tmp = {"name": name, "price": price, "count": count, "weight": "0"}  # weight 克重暂时使用0来进行测算
+        ws['L%s' % idx] = tk_inf["name"]
+        ws['M%s' % idx] = tk_inf["count"]
+        ws['N%s' % idx] = tk_inf["price"]
+        ws['O%s' % idx] = tk_inf["weight"]
+        ws['P%s' % idx] = "=((N%s + ($D$4 * O%s+$E$4)) / (1 -$G$5-$H$5-$I$5)) /$J$5" % (idx, idx)  # 计算最终成本价
+        ws['Q%s' % idx] = "=P%s * (1 +$B$13)" % idx  # 售卖价
+        ws['R%s' % idx] = "=Q%s / (1 -$D$13)" % idx  # 上货价
+    wb.save(base_path + "成本计算.xls")
 
 
 if __name__ == '__main__':
@@ -115,3 +184,5 @@ if __name__ == '__main__':
     page_info = grab_webpage(URL)
     # 根据下载图片并根据图片类型裁剪  pil 处理
     handel_pic_info(page_info)
+    # 处理库存信息
+    handel_stock_inf(page_info[STOCK_INF])

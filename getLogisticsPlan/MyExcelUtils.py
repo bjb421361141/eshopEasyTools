@@ -46,10 +46,10 @@ class ExcelUtil(object):
         # 获取 sheet 页
         sheet = None
         if sheetName is not None:
-            sheet = self.__workbook.add_sheet(sheetName, cell_overwrite_ok=True)
-            # sheet = self.__workbook.get_sheet(sheetName)
-            # if sheet is None:
-            #     sheet = self.__workbook.add_sheet(sheetName, cell_overwrite_ok=True)
+            try:
+                sheet = self.__workbook.get_sheet(sheetName)
+            except Exception:
+                sheet = self.__workbook.add_sheet(sheetName, cell_overwrite_ok=True)
         else:
             sheet = self.__workbook.add_sheet(u'sheet1', cell_overwrite_ok=True)
 
