@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 
 
-class Code():
+class VerificationCode:
     def __init__(self, browser):
         self.browser = browser
         self.verify_url = 'http://littlebigluo.qicp.net:47720/'  # 验证码识别网址，返回识别结果

@@ -1,10 +1,6 @@
-from login.code import Code
 import time
 from selenium import webdriver
-from selenium.webdriver.support import wait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
 
 
 # 速卖通登入
@@ -22,31 +18,26 @@ class AliexpressLogin:
         browser.get(self.login_url)
         time.sleep(5)  # 缓冲
         try:
-            # wait.WebDriverWait(browser, 5).until(
-            #     EC.element_to_be_clickable((By.CLASS_NAME, 'login-submit click'))).click()
+            ifm = browser.find_element_by_xpath("//*[@id=\"localstorage-proxy-ifr-alibabadotcom\"]")
+            browser.switch_to.frame(ifm)
             input_name = browser.find_element_by_id('fm-login-id')
             input_pd = browser.find_element_by_id('fm-login-password')
+            input_name.clear()
             input_name.send_keys(self.username)
+            input_pd.clear()
             input_pd.send_keys(self.password)
             browser.find_element_by_id('fm-login-submit').click()
             time.sleep(5)
-            print(browser.get_cookies())
-            # start_end, check = self.add_cookie()
-            # time.sleep(5)
             # c = Code(browser)  # 调用验证码识别模块
             # c.main()
+            print(browser.get_cookies())
             print('登录成功！')
             time.sleep(0.8)
             print(browser.current_url)
-            # try:
-            # wait.WebDriverWait(browser, 3).until(EC.element_to_be_clickable((By.CLASS_NAME,'btn.btn-primary.ok'))).click()
-            # except NoSuchElementException:
-            # pass
-            # self.check(start_end, check)
         except NoSuchElementException:
+            # 重复尝试登入操作
             print('没有找到元素')
             self.login()
-
 
     def add_cookie(self):
         """
@@ -58,10 +49,12 @@ class AliexpressLogin:
         pass
 
     def get_cookie(self):
+
         pass
 
     def main(self):
         self.login()
+
 
 # fm-login-id
 # fm-login-password
