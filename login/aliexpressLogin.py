@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import time
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -18,7 +20,7 @@ class AliexpressLogin:
         browser.get(self.login_url)
         time.sleep(5)  # 缓冲
         try:
-            ifm = browser.find_element_by_xpath("//*[@id=\"localstorage-proxy-ifr-alibabadotcom\"]")
+            ifm = browser.find_elements_by_tag_name("iframe")[0]
             browser.switch_to.frame(ifm)
             input_name = browser.find_element_by_id('fm-login-id')
             input_pd = browser.find_element_by_id('fm-login-password')

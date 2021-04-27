@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
+
 import requests
 import json
 import os
 from lxml import etree
 from pyquery import PyQuery as pq
 
-url = r"https://detail.1688.com/offer/569380999718.html?spm=a2615.7691456.autotrace-offerGeneral.22.7fb13356ft1KPL"
+url = r"https://detail.1688.com/offer/639657153440.html?spm=a26352.13672862.offerlist.63.25cd46a78W4mgp"
 
 # contentDetailUrl = r"https://img.alicdn.com/tfscom/TB1YK4WtqNj0u4jSZFyXXXgMVXa"
 
