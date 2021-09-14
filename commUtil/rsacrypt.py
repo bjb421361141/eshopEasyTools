@@ -74,10 +74,11 @@ if __name__ == '__main__':
 
     rs_obj = RsaCrypt(properties_map.get("App").get("pubkey"), properties_map.get("App").get("prikey"))
 
-    text = 'bjb421361'
-    ency_text = rs_obj.encrypt(text)
-    cipher_text = base64.b64encode(ency_text)
+    # text = 'bjb421361141'
+    # ency_text = rs_obj.encrypt(text)
+    # cipher_text = base64.b64encode(ency_text)
 
-    encrypted_bytes = base64.b64decode(cipher_text)
+    # encrypted_bytes = base64.b64decode(cipher_text)
+    encrypted_bytes = base64.b64decode("NjJjY2VlZGYzMGM2OGJlY2ZhYTJmMTQ3YmMxZTI1MTQyZTA5M2JiYzAyOTRkMmU1NGQzMzE1ZDllODdjMjVlOA==")
     decode_text = rs_obj.decrypt(encrypted_bytes)
-    print(ency_text, decode_text.decode())
+    # print(ency_text, decode_text.decode())

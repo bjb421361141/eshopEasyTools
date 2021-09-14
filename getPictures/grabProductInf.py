@@ -6,6 +6,7 @@ import shutil
 
 import requests
 import json
+import demjson
 
 from PIL import Image
 from openpyxl import load_workbook
@@ -14,14 +15,20 @@ from pyquery import PyQuery as pq
 from commUtil.propertiesUtil import Properties
 from login.alibabaLogin import AlibabaLogin
 
-URL = "https://detail.1688.com/pic/634944082325.html?spm=a261y.8881078.0.0.11661fc1tF4RKO"
+URL = "https://detail.1688.com/offer/641691867854.html?spm=a262uh.11734178.favorite-offers-offer-list-offer12.2.6d392ef60dvg4z"
+# URL = "https://item.taobao.com/item.htm?spm=a1z10.5-c-s.w4002-22271431933.60.556e23c4mVJ9TB&id=646063149217"
 
 # 静态参数
 MAIN_PIC = "mainPic"
 DESC_PIC = "descPic"
 STOCK_INF = "stockInf"
+OTHER_INF = "otherInf"
+# COOKIES = "t=04d720a58dd60183eeed327c416278bc; cna=ubEuGbm+4RwCAbf7XQleDKYV; lgc=tb925976948; tracknick=tb925976948; thw=cn; _m_h5_tk=1559500873e2e3a70bd5c42cea344870_1622816735116; _m_h5_tk_enc=39e6f65b4a22eadadd6d1ce9a8dcf39f; xlly_s=1; cookie2=15fa6734c0091b1135352597f5df4813; _samesite_flag_=true; sgcookie=E1007JyNfWAKL5GEl+Wo2cLOuVkKTH7us08bo0jio1ErVWoH+5wXIjdcPCdZfdWdsiPnNQkZptHMwYcuZ7h960EwZA==; unb=2210611464742; uc3=id2=UUpgRsIuDUi3Gn4YgA==&lg2=Vq8l+KCLz3/65A==&nk2=F5RMGyZRZ93Ox8g=&vt3=F8dCuw77pVaA5+6WkEo=; csg=547eac52; cookie17=UUpgRsIuDUi3Gn4YgA==; dnk=tb925976948; skt=66360880cecf4e5b; existShop=MTYyMjgwNzUyMQ==; uc4=id4=0@U2gqyZJ/Ix2UNf+IxUaq4GdAxkyKTd8p&nk4=0@FY4HXgw1vlNQNbVDYN1lTsREnUPRKA==; _cc_=UtASsssmfA==; _l_g_=Ug==; sg=824; _nk_=tb925976948; cookie1=BYECxSBpVqRK3D7hRVJlJXfItlB4EbVOmGhKwpY/iY4=; enc=Ja11bdTMN2do7kZoQ6skj8Ja8Dllxqdl/16a8f79aCE2DUzNiaLQzaz4lNqo9sVqKqyiRXkS8lMZn7Zy+muGScMVqZPHW16+BDkwd6IRxOY=; mt=ci=0_1; uc1=cookie16=UIHiLt3xCS3yM2h4eKHS9lpEOw==&cookie14=Uoe2z+ti9RyBtQ==&cookie21=URm48syIYn73&existShop=false&cookie15=V32FPkk/w0dUvg==&pas=0; hng=CN|zh-CN|CNY|156; v=0; _tb_token_=feae5361043b3; tfstk=cQ6FBgszxJeFZNv7Mp9rAVFfJQ3dZo6ceR-2t1z9WJpEt3Ahiq0JjQEVbg8YIBf..; l=eB_7LphHjl-06kOLBOfZourza77tsIRvjuPzaNbMiOCP_Lfw5CDhW6_NqB8eCnGVh6bDR3WWjis6BeYBq3xonxvte5DDwQHmn; isg=BNDQiLezhOmbLljtaVTHkVnMoR4imbTjPgOGYcqhmSv-BXCvcqr-csk32c3l_my7"
 COOKIES = None
+LOGIN_TOOL = None
 properties_map = Properties("../login/config.properties").getproperties()
+
+s = requests.Session()
 
 
 def wrap_web_header():
@@ -30,16 +37,19 @@ def wrap_web_header():
     :return: 请求头信息
     """
     global COOKIES
+    global LOGIN_TOOL
     accept = r"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
     user_agent = r"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"
     if COOKIES is None:
-        login_tool = AlibabaLogin(properties_map.get("Alibaba").get("username"), properties_map.get("Alibaba").get("password"))
-        login_tool.login()
-        cookies_map = login_tool.get_cookies()
-        if cookies_map.length > 0:
+        LOGIN_TOOL = AlibabaLogin(properties_map.get("Alibaba").get("username"),
+                                  properties_map.get("Alibaba").get("password"))
+        LOGIN_TOOL.login()
+        cookies_map = LOGIN_TOOL.get_cookies()
+        if cookies_map is not None and len(cookies_map) > 0:
             COOKIES = ''
-            for ctmp_n, ctmp_v in cookies_map:
-                COOKIES += ctmp_n, ctmp_v
+            for tmp_obj in cookies_map:
+                if tmp_obj["name"] is not None and tmp_obj["value"] is not None:
+                    COOKIES += tmp_obj["name"] + "=" + tmp_obj["value"]
         else:
             raise Exception("缺少cookies信息")  # 抛出异常信息
 
@@ -132,14 +142,37 @@ def grab_webpage(url):
     webpage_info[DESC_PIC] = desc_pic_urls
 
     # 获取库存（尺码，价格信息）
-    stock_inf_tr = doc(".obj-sku table tr")
+    # stock_inf_tr = doc(".obj-sku table tr")
+    # stock_inf = []
+    # for tr in stock_inf_tr:
+    #     name = pq(tr).find("td.name").text()
+    #     price = pq(tr).find("td.price em.value").text()
+    #     count = pq(tr).find("td.count").text()
+    #     tmp = {"name": name, "price": price, "count": count, "weight": "0"}  # weight 克重暂时使用0来进行测算
+    #     stock_inf.append(tmp)
+    # webpage_info[STOCK_INF] = stock_inf
+    config_str = ""
+    data_str = ""
     stock_inf = []
-    for tr in stock_inf_tr:
-        name = pq(tr).find("td.name").text()
-        price = pq(tr).find("td.price em.value").text()
-        count = pq(tr).find("td.count").text()
-        tmp = {"name": name, "price": price, "count": count, "weight": "0"}  # weight 克重暂时使用0来进行测算
-        stock_inf.append(tmp)
+    try:
+        config_str = re.search(r"var iDetailConfig =([\s\S]*)var iDetailData = ([\s\S]*)iDetailData.allTagIds([\s\S]*)",
+                               resp_data.decode()).group(1)
+        data_str = re.search(r"var iDetailConfig =([\s\S]*)var iDetailData = ([\s\S]*)iDetailData.allTagIds([\s\S]*)",
+                             resp_data.decode()).group(2)
+    except UnicodeDecodeError:
+        config_str = re.search(r"var iDetailConfig =([\s\S]*)var iDetailData = ([\s\S]*)iDetailData.allTagIds([\s\S]*)",
+                               resp_data.decode('gbk')).group(1)
+        data_str = re.search(r"var iDetailConfig =([\s\S]*)var iDetailData = ([\s\S]*)iDetailData.allTagIds([\s\S]*)",
+                             resp_data.decode('gbk')).group(2)
+    if data_str is not None:
+        config_map = demjson.decode(config_str.replace(";", ""))
+        sku_map = demjson.decode(data_str.replace(";", ""))
+        price = config_map['refPrice']
+        for key, val in sku_map["sku"]["skuMap"].items():
+            if config_map['isRangePriceSku'] == 'false':
+                price = val["price"]
+            tmp = {"name": key, "price": price, "count": val["canBookCount"], "weight": "0"}
+            stock_inf.append(tmp)
     webpage_info[STOCK_INF] = stock_inf
     return webpage_info
 
@@ -210,7 +243,21 @@ if __name__ == '__main__':
     handel_pic_info(page_info)
     # 处理库存信息
     handel_stock_inf(page_info[STOCK_INF])
+
     # cookiesStr = r"ali_apache_id=10.147.120.78.1568860040119.356581.5; cna=yxPrF3ab6WACAd9oBhMIXDEl; ali_ab=120.41.158.97.1612615929870.6; UM_distinctid=177776d64bc21f-0f09bab047943d-53e3566-15f900-177776d64bd2d3; taklid=8c9fe98a450643d5b1ce8a6d273b3143; hng=CN%7Czh-CN%7CCNY%7C156; CNZZDATA1261052687=696041790-1612615281-https%253A%252F%252Fdetail.1688.com%252F%7C1613477845; ad_prefer=\"2021/03/03 12:45:24\"; h_keys=\"ebaerr#32385161394#%u72d7%u72d7%u7275%u5f15%u7ef3%u5361%u901a%u72d7%u94fe%u5ba0%u7269#%u5361%u901a%u72d7%u94fe%u5ba0%u7269#%u4e50%u5ba0%u7535%u5b50%u6e90%u5934%u5382%u5bb6#%u6d94%u612c%u7587%u9422%u975b%u74d9%u5a67%u612c%u3054%u9358%u509a%ue18d#%u7ae5%u8da3%u7eaf%u68c9%u56db%u811a%u8863#%u9ec4%u91d1%u8c82%u72d7%u8863%u670d#%u5984%u5578#%u5efa%u5fb7%u5e02%u4e0b%u6daf%u9547%u58a9%u6cca%u8d38%u6613%u5546%u884c\"; lid=%E5%BF%83%E6%AE%87%E6%97%A7%E7%97%9B; ali_apache_track=c_mid=b2b-808862444|c_lid=%E5%BF%83%E6%AE%87%E6%97%A7%E7%97%9B|c_ms=1; _bl_uid=26k7wnUv91moj2gXX233yXF92Fbs; alicnweb=touch_tb_at%3D1617945381138%7Clastlogonid%3D%25E5%25BF%2583%25E6%25AE%2587%25E6%2597%25A7%25E7%2597%259B; CNZZDATA1253659577=2036282685-1612613793-https%253A%252F%252Fpurchase.1688.com%252F%7C1619103965; _csrf_token=1619108265746; xlly_s=1; cookie2=116657782bc95045685d767c72b0744c; t=dc1a133d68b679b18965bbfb8f1e4b7c; _tb_token_=5560e8e66bb4b; __cn_logon__=false; JSESSIONID=9F0322831D1B1FF335A76DA76AF7E021; tfstk=c_jABQYiA7Vcrh9RLZUoCS_5FCrOZlUJ_-OtX-eFt6BQ6MmOi_jhvlCIldlv28C..; l=eBr8qlYmjPw3aJfSBOfwourza77tQIRxSuPzaNbMiOCPO0BXymMRW61jDVxWCnGVh686J3kEpCzgBeYBqBAnnxv9zUAs1fMmn; isg=BFZW4sSFKqC9HR6YkQeq9UNwpwxY95oxjzlnzcC_VDnKg_YdKYXtQY55Hx9vFpJJ"
     # arrays = re.split('[;,]', cookiesStr)
     # for _str in arrays:
     #     print(_str)
+    # login_tool = AlibabaLogin(properties_map.get("Alibaba").get("username"),
+    #                           properties_map.get("Alibaba").get("password"))
+    # print("区别----------------")
+    # login_tool.login()
+    # cookies_map = login_tool.get_cookies()
+    # if cookies_map is not None and len(cookies_map) > 0:
+    #     COOKIES = ''
+    #     for tmp_obj in cookies_map:
+    #         if tmp_obj["name"] is not None and tmp_obj["value"] is not None:
+    #             print(tmp_obj["name"] + "=" + tmp_obj["value"])
+
+    # resp_data = requests.get(URL, headers=wrap_web_header()).content.decode("gbk")
+    # doc = resp_data

@@ -3,6 +3,7 @@
 import time
 
 from selenium import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
 
 
 class DefaultLogin(object):
@@ -30,7 +31,7 @@ class DefaultLogin(object):
         :return:
         """
         self.browser.get(self.login_url)
-        time.sleep(5)  # 等待页面加载完成
+        # time.sleep(2)  # 等待页面加载完成
         try:
             self.fill_userinfo(self.username, self.password)
             self.go_login()
@@ -41,7 +42,8 @@ class DefaultLogin(object):
             print('登入异常!', err)
             raise Exception(err)
         finally:
-            self.browser.quit()
+            print('未关闭浏览器')
+            # self.browser.quit()
 
     def fill_userinfo(self, username, password):
         """
@@ -70,3 +72,17 @@ class DefaultLogin(object):
         :return:
         """
         return self.cookies
+
+    def go_vistist(self, vistist_url):
+        """
+            访问地址
+        :return:
+        """
+        self.browser.get(self.login_url)
+
+    def quit(self):
+        """
+        退出模拟浏览器
+        :return:
+        """
+        self.browser.quit()

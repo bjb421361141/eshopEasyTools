@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import time
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from commUtil.propertiesUtil import Properties
 from commUtil.rsacrypt import RsaCrypt
@@ -16,7 +18,8 @@ class AlibabaLogin(DefaultLogin):
         p = Properties("../login/config.properties")
         properties_map = p.getproperties()
         rs_obj = RsaCrypt(properties_map.get("App").get("pubkey"), properties_map.get("App").get("prikey"))
-        super(AlibabaLogin, self).__init__('https://login.1688.com/member/signin.htm', username,
+        # https://login.1688.com/member/signin.htm
+        super(AlibabaLogin, self).__init__('https://re.1688.com/?keywords={keywords}&cosite=baidujj_pz&location=re&trackid={trackid}&keywordid={keywordid}&format=normal', username,
                                            rs_obj.decrypt(password).decode())
 
     def fill_userinfo(self, username, password):
@@ -24,6 +27,10 @@ class AlibabaLogin(DefaultLogin):
             填充阿里巴巴登入的用户名密码信息
         :return:
         """
+        self.browser.find_element_by_xpath("//*[@id='alibar']/div[1]/div[2]/ul/li[3]/a").click()
+        element = WebDriverWait(self.browser, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "iframe"))
+        )
         ifm = self.browser.find_elements_by_tag_name("iframe")[0]
         self.browser.switch_to.frame(ifm)
         input_name = self.browser.find_element_by_id('fm-login-id')
@@ -49,7 +56,15 @@ class AlibabaLogin(DefaultLogin):
         :return:
         """
         self.browser.find_element_by_css_selector('button.fm-submit').click()
+        time.sleep(5)  # 等待页面加载完成
+        try:
+            login_error = self.browser.find_element_by_xpath("//*[@id=\"login-error\"]/div")
+            if login_error.text is not None:
+                raise Exception(login_error.text)
+        except Exception as e:
+            print("没有发现错误提示模块信息")
         # 校验是否登入成功
+        # login - error  id="nc_1__scale_text" 滑动  //*[@id="nocaptcha"]
 
 
 if __name__ == '__main__':
