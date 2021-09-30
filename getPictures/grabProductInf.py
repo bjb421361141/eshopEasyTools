@@ -6,7 +6,6 @@ import shutil
 
 import requests
 import json
-import demjson
 
 from PIL import Image
 from openpyxl import load_workbook
@@ -15,21 +14,24 @@ from pyquery import PyQuery as pq
 from commUtil.propertiesUtil import Properties
 from login.alibabaLogin import AlibabaLogin
 
-URL = "https://detail.1688.com/offer/641691867854.html?spm=a262uh.11734178.favorite-offers-offer-list-offer12.2.6d392ef60dvg4z"
-# URL = "https://item.taobao.com/item.htm?spm=a1z10.5-c-s.w4002-22271431933.60.556e23c4mVJ9TB&id=646063149217"
+URL = "https://detail.1688.com/offer/553178615733.html\n" \
+      "https://detail.1688.com/offer/655819846969.html\n" \
+      "https://detail.1688.com/offer/654970638934.html\n" \
+      "https://detail.1688.com/offer/623629351705.html\n" \
+      "https://detail.1688.com/offer/628440305353.html\n" \
+      "https://detail.1688.com/offer/623350174922.html\n" \
+      "https://detail.1688.com/offer/649413088953.html"
 
 # 静态参数
+URL_LINK = "url_link"
 MAIN_PIC = "mainPic"
 DESC_PIC = "descPic"
 STOCK_INF = "stockInf"
-OTHER_INF = "otherInf"
-# COOKIES = "t=04d720a58dd60183eeed327c416278bc; cna=ubEuGbm+4RwCAbf7XQleDKYV; lgc=tb925976948; tracknick=tb925976948; thw=cn; _m_h5_tk=1559500873e2e3a70bd5c42cea344870_1622816735116; _m_h5_tk_enc=39e6f65b4a22eadadd6d1ce9a8dcf39f; xlly_s=1; cookie2=15fa6734c0091b1135352597f5df4813; _samesite_flag_=true; sgcookie=E1007JyNfWAKL5GEl+Wo2cLOuVkKTH7us08bo0jio1ErVWoH+5wXIjdcPCdZfdWdsiPnNQkZptHMwYcuZ7h960EwZA==; unb=2210611464742; uc3=id2=UUpgRsIuDUi3Gn4YgA==&lg2=Vq8l+KCLz3/65A==&nk2=F5RMGyZRZ93Ox8g=&vt3=F8dCuw77pVaA5+6WkEo=; csg=547eac52; cookie17=UUpgRsIuDUi3Gn4YgA==; dnk=tb925976948; skt=66360880cecf4e5b; existShop=MTYyMjgwNzUyMQ==; uc4=id4=0@U2gqyZJ/Ix2UNf+IxUaq4GdAxkyKTd8p&nk4=0@FY4HXgw1vlNQNbVDYN1lTsREnUPRKA==; _cc_=UtASsssmfA==; _l_g_=Ug==; sg=824; _nk_=tb925976948; cookie1=BYECxSBpVqRK3D7hRVJlJXfItlB4EbVOmGhKwpY/iY4=; enc=Ja11bdTMN2do7kZoQ6skj8Ja8Dllxqdl/16a8f79aCE2DUzNiaLQzaz4lNqo9sVqKqyiRXkS8lMZn7Zy+muGScMVqZPHW16+BDkwd6IRxOY=; mt=ci=0_1; uc1=cookie16=UIHiLt3xCS3yM2h4eKHS9lpEOw==&cookie14=Uoe2z+ti9RyBtQ==&cookie21=URm48syIYn73&existShop=false&cookie15=V32FPkk/w0dUvg==&pas=0; hng=CN|zh-CN|CNY|156; v=0; _tb_token_=feae5361043b3; tfstk=cQ6FBgszxJeFZNv7Mp9rAVFfJQ3dZo6ceR-2t1z9WJpEt3Ahiq0JjQEVbg8YIBf..; l=eB_7LphHjl-06kOLBOfZourza77tsIRvjuPzaNbMiOCP_Lfw5CDhW6_NqB8eCnGVh6bDR3WWjis6BeYBq3xonxvte5DDwQHmn; isg=BNDQiLezhOmbLljtaVTHkVnMoR4imbTjPgOGYcqhmSv-BXCvcqr-csk32c3l_my7"
-COOKIES = None
-LOGIN_TOOL = None
+
+COOKIES = "cna=iasVGVu3nj4CAbf7XYGq6VK5; _bl_uid=C2kbqobOe0deaR4gd0nzbjm838vI; UM_distinctid=1794725216cc7-07371a386069e6-30614f07-144000-1794725216d88a; taklid=d09ef3fcd8fb472b9f4bb69343e4fef0; ali_ab=183.251.93.129.1620396357714.7; lid=tb69481656; ali_apache_track=c_mid=b2b-1888131324|c_lid=tb69481656|c_ms=1; alicnweb=touch_tb_at=1624044364846|lastlogonid=tb69481656; xlly_s=1; _m_h5_tk=79d41008026287263e7b044a0fb8b6c2_1627315531261; _m_h5_tk_enc=da51ea45c6f0bbce7633167abb435679; cookie2=1a79067f96ba13b99c420d0576f437a4; t=5d630d2b98b2759cf58acc4dd530043d; _tb_token_=e1b80e537fdfa; __cn_logon__=false; CNZZDATA1253659577=1144812740-1620391771-https%3A%2F%2Fp4psearch.1688.com%2F|1627306510; _csrf_token=1627308137213; JSESSIONID=4F864C5A44EE1BB06967D5E2DE1D2549; tfstk=cRAfB9j71oqf31HagEgzQ0x4QTSNaBo5rxsvlpjGy-jK7J8F2sfYTM9rXdquw9Q5.; l=eBO8ZMUPjpyqRGsLBO5Bourza77TqIOb4uPzaNbMiInca6shxFiV7NCB82vyIdtjgt1e4etyG0JegdLHR3xBAxDDBkhy80ornxf..; isg=BImJwTXfDcaWIfFZ3sL5LMu0mLXj1n0IWy0cLSv_TnCvcqmEcyWq2HeqsNZEThVA"
 properties_map = Properties("../login/config.properties").getproperties()
 
 s = requests.Session()
-
 
 def wrap_web_header():
     """
@@ -77,12 +79,15 @@ def dir_download_images(a_url, a_filename, a_save_dir="C:\\Users\\Baijb\\Desktop
     :param a_save_dir:
     :return:
     """
-    imgs_data = requests.get(a_url, headers=wrap_web_header())
-    save_name = str(a_save_dir + a_filename)
-    if not os.path.exists(a_save_dir):
-        os.makedirs(a_save_dir)
-    with open(save_name, 'wb') as f:
-        f.write(imgs_data.content)
+    try:
+        imgs_data = requests.get(a_url, headers=wrap_web_header())
+        save_name = str(a_save_dir + a_filename)
+        if not os.path.exists(a_save_dir):
+            os.makedirs(a_save_dir)
+        with open(save_name, 'wb') as f:
+            f.write(imgs_data.content)
+    except OSError as err:
+        print(err)
 
 
 def resize_pic(pic_path, width, height, rtocut_flag=False):
@@ -95,6 +100,8 @@ def resize_pic(pic_path, width, height, rtocut_flag=False):
     :return:
     """
     image = Image.open(pic_path)
+    if image.mode == 'P':
+        image = image.convert('RGB')
     base_width = width
     h_size = height
     if rtocut_flag:
@@ -104,6 +111,24 @@ def resize_pic(pic_path, width, height, rtocut_flag=False):
     # 默认情况下，PIL使用Image.NEAREST过滤器进行大小调整，从而获得良好的性能，但质量很差。
     im_resized = image.resize((base_width, h_size), Image.ANTIALIAS)
     im_resized.save(pic_path)
+
+
+def blend_brand_images(pic_base_path, pic_name, brand_pic_path="brand_pic.png"):
+    """
+    合并商标
+    :return:
+    """
+    source_pic = Image.open(pic_base_path + pic_name)
+    brand_pic = Image.open(brand_pic_path)
+    if source_pic.size[0] != brand_pic.size[0] or source_pic.size[1] != brand_pic.size[1]:
+        return
+    source_pic = source_pic.convert('RGBA')
+    final2 = Image.new("RGBA", source_pic.size)
+    final2 = Image.alpha_composite(final2, source_pic)
+    final2 = Image.alpha_composite(final2, brand_pic)
+    # final2.show()
+    final2 = final2.convert('RGB')
+    final2.save(pic_base_path + pic_name.split(".")[0] + "_brand.jpg")
 
 
 # def cv_resize
@@ -116,15 +141,16 @@ def grab_webpage(url):
     """
     webpage_info = {}
     resp_data = requests.get(url, headers=wrap_web_header()).content
-
+    webpage_info[URL_LINK] = url
     doc = pq(resp_data)
     pic_objs = doc(".tab-trigger").items()
     main_pic_urls = []
     for pic in pic_objs:
-        json_obj = json.loads(pic.attr("data-imgs"))
-        pic_url = json_obj["original"]
-        pic_name = pic_url[json_obj["original"].rindex("/") + 1:]
-        main_pic_urls.append({"pic_url": pic_url, "pic_name": pic_name})
+        if pic.attr("data-imgs") is not None:
+            json_obj = json.loads(pic.attr("data-imgs"))
+            pic_url = json_obj["original"]
+            pic_name = pic_url[json_obj["original"].rindex("/") + 1:]
+            main_pic_urls.append({"pic_url": pic_url, "pic_name": pic_name})
     webpage_info[MAIN_PIC] = main_pic_urls
 
     # 详情信息是直接请求的
@@ -142,37 +168,14 @@ def grab_webpage(url):
     webpage_info[DESC_PIC] = desc_pic_urls
 
     # 获取库存（尺码，价格信息）
-    # stock_inf_tr = doc(".obj-sku table tr")
-    # stock_inf = []
-    # for tr in stock_inf_tr:
-    #     name = pq(tr).find("td.name").text()
-    #     price = pq(tr).find("td.price em.value").text()
-    #     count = pq(tr).find("td.count").text()
-    #     tmp = {"name": name, "price": price, "count": count, "weight": "0"}  # weight 克重暂时使用0来进行测算
-    #     stock_inf.append(tmp)
-    # webpage_info[STOCK_INF] = stock_inf
-    config_str = ""
-    data_str = ""
+    stock_inf_tr = doc(".obj-sku table tr")
     stock_inf = []
-    try:
-        config_str = re.search(r"var iDetailConfig =([\s\S]*)var iDetailData = ([\s\S]*)iDetailData.allTagIds([\s\S]*)",
-                               resp_data.decode()).group(1)
-        data_str = re.search(r"var iDetailConfig =([\s\S]*)var iDetailData = ([\s\S]*)iDetailData.allTagIds([\s\S]*)",
-                             resp_data.decode()).group(2)
-    except UnicodeDecodeError:
-        config_str = re.search(r"var iDetailConfig =([\s\S]*)var iDetailData = ([\s\S]*)iDetailData.allTagIds([\s\S]*)",
-                               resp_data.decode('gbk')).group(1)
-        data_str = re.search(r"var iDetailConfig =([\s\S]*)var iDetailData = ([\s\S]*)iDetailData.allTagIds([\s\S]*)",
-                             resp_data.decode('gbk')).group(2)
-    if data_str is not None:
-        config_map = demjson.decode(config_str.replace(";", ""))
-        sku_map = demjson.decode(data_str.replace(";", ""))
-        price = config_map['refPrice']
-        for key, val in sku_map["sku"]["skuMap"].items():
-            if config_map['isRangePriceSku'] == 'false':
-                price = val["price"]
-            tmp = {"name": key, "price": price, "count": val["canBookCount"], "weight": "0"}
-            stock_inf.append(tmp)
+    for tr in stock_inf_tr:
+        name = pq(tr).find("td.name").text()
+        price = pq(tr).find("td.price em.value").text()
+        count = pq(tr).find("td.count").text()
+        tmp = {"name": name, "price": price, "count": count, "weight": "0"}  # weight 克重暂时使用0来进行测算
+        stock_inf.append(tmp)
     webpage_info[STOCK_INF] = stock_inf
     return webpage_info
 
@@ -185,24 +188,34 @@ def handel_pic_info(page_info, base_path="C:\\Users\\Baijb\\Desktop\\产品模�
     :param base_path: 文件保存路径
     :return:
     """
+    if not os.path.exists(base_path):
+        try:
+            os.makedirs(base_path + "01主图\\")
+            os.makedirs(base_path + "02详情\\")
+        except OSError as e:
+            raise
     main_pic_inf = page_info[MAIN_PIC]
     main_pic_basepath = base_path + "01主图\\"
     for pic in main_pic_inf:
-        dir_download_images(pic["pic_url"], pic["pic_name"], main_pic_basepath)
-        if os.path.exists(main_pic_basepath + pic["pic_name"]):
-            resize_pic(main_pic_basepath + pic["pic_name"], 800, 800)
+        try:
+            dir_download_images(pic["pic_url"], pic["pic_name"], main_pic_basepath)
+            if os.path.exists(main_pic_basepath + pic["pic_name"]):
+                resize_pic(main_pic_basepath + pic["pic_name"], 800, 800)
+                blend_brand_images(main_pic_basepath, pic["pic_name"])
+        except BaseException as e:
+            print(e)
 
     desc_pic_inf = page_info[DESC_PIC]
     desc_pic_basepath = base_path + "02详情\\"
     for pic in desc_pic_inf:
         dir_download_images(pic["pic_url"], pic["pic_name"], desc_pic_basepath)
         if os.path.exists(desc_pic_basepath + pic["pic_name"]):
-            resize_pic(desc_pic_basepath + pic["pic_name"], 700, 700, True)
+            resize_pic(desc_pic_basepath + pic["pic_name"], 800, 800, True)
 
     return
 
 
-def handel_stock_inf(stock_inf_lst, base_path="C:\\Users\\Baijb\\Desktop\\产品模板\\"):
+def handel_stock_inf(stock_inf_lst, url_link, base_path="C:\\Users\\Baijb\\Desktop\\产品模板\\"):
     """
     复制成本信息模板，向指定位置设置库存信息并计算售卖价
         公式：
@@ -227,7 +240,7 @@ def handel_stock_inf(stock_inf_lst, base_path="C:\\Users\\Baijb\\Desktop\\产品
         idx = idx + 1
 
     ws = wb.get_sheet_by_name('产品链接')
-    ws['B2'] = URL
+    ws['B2'] = url_link
     wb.save(base_path + "03成本计算.xlsx")
 
 
@@ -237,27 +250,17 @@ if __name__ == '__main__':
             1、下载主图图片、详情页图片到指定目录  **处理图片大小
             2、生成成本模板并填入相关数据（尺码信息）
     """
-    # 获取阿里巴巴指定路径下的商品信息
-    page_info = grab_webpage(URL)
-    # 根据下载图片并根据图片类型裁剪  pil 处理
-    handel_pic_info(page_info)
-    # 处理库存信息
-    handel_stock_inf(page_info[STOCK_INF])
-
-    # cookiesStr = r"ali_apache_id=10.147.120.78.1568860040119.356581.5; cna=yxPrF3ab6WACAd9oBhMIXDEl; ali_ab=120.41.158.97.1612615929870.6; UM_distinctid=177776d64bc21f-0f09bab047943d-53e3566-15f900-177776d64bd2d3; taklid=8c9fe98a450643d5b1ce8a6d273b3143; hng=CN%7Czh-CN%7CCNY%7C156; CNZZDATA1261052687=696041790-1612615281-https%253A%252F%252Fdetail.1688.com%252F%7C1613477845; ad_prefer=\"2021/03/03 12:45:24\"; h_keys=\"ebaerr#32385161394#%u72d7%u72d7%u7275%u5f15%u7ef3%u5361%u901a%u72d7%u94fe%u5ba0%u7269#%u5361%u901a%u72d7%u94fe%u5ba0%u7269#%u4e50%u5ba0%u7535%u5b50%u6e90%u5934%u5382%u5bb6#%u6d94%u612c%u7587%u9422%u975b%u74d9%u5a67%u612c%u3054%u9358%u509a%ue18d#%u7ae5%u8da3%u7eaf%u68c9%u56db%u811a%u8863#%u9ec4%u91d1%u8c82%u72d7%u8863%u670d#%u5984%u5578#%u5efa%u5fb7%u5e02%u4e0b%u6daf%u9547%u58a9%u6cca%u8d38%u6613%u5546%u884c\"; lid=%E5%BF%83%E6%AE%87%E6%97%A7%E7%97%9B; ali_apache_track=c_mid=b2b-808862444|c_lid=%E5%BF%83%E6%AE%87%E6%97%A7%E7%97%9B|c_ms=1; _bl_uid=26k7wnUv91moj2gXX233yXF92Fbs; alicnweb=touch_tb_at%3D1617945381138%7Clastlogonid%3D%25E5%25BF%2583%25E6%25AE%2587%25E6%2597%25A7%25E7%2597%259B; CNZZDATA1253659577=2036282685-1612613793-https%253A%252F%252Fpurchase.1688.com%252F%7C1619103965; _csrf_token=1619108265746; xlly_s=1; cookie2=116657782bc95045685d767c72b0744c; t=dc1a133d68b679b18965bbfb8f1e4b7c; _tb_token_=5560e8e66bb4b; __cn_logon__=false; JSESSIONID=9F0322831D1B1FF335A76DA76AF7E021; tfstk=c_jABQYiA7Vcrh9RLZUoCS_5FCrOZlUJ_-OtX-eFt6BQ6MmOi_jhvlCIldlv28C..; l=eBr8qlYmjPw3aJfSBOfwourza77tQIRxSuPzaNbMiOCPO0BXymMRW61jDVxWCnGVh686J3kEpCzgBeYBqBAnnxv9zUAs1fMmn; isg=BFZW4sSFKqC9HR6YkQeq9UNwpwxY95oxjzlnzcC_VDnKg_YdKYXtQY55Hx9vFpJJ"
-    # arrays = re.split('[;,]', cookiesStr)
-    # for _str in arrays:
-    #     print(_str)
-    # login_tool = AlibabaLogin(properties_map.get("Alibaba").get("username"),
-    #                           properties_map.get("Alibaba").get("password"))
-    # print("区别----------------")
-    # login_tool.login()
-    # cookies_map = login_tool.get_cookies()
-    # if cookies_map is not None and len(cookies_map) > 0:
-    #     COOKIES = ''
-    #     for tmp_obj in cookies_map:
-    #         if tmp_obj["name"] is not None and tmp_obj["value"] is not None:
-    #             print(tmp_obj["name"] + "=" + tmp_obj["value"])
-
-    # resp_data = requests.get(URL, headers=wrap_web_header()).content.decode("gbk")
-    # doc = resp_data
+    # 下图片
+    urls = URL.split("\n")
+    for url_idx in range(0, len(urls)):
+        if urls[url_idx] is not None and len(urls[url_idx]) > 0:
+            # 获取阿里巴巴指定路径下的商品信息
+            page_info = grab_webpage(urls[url_idx])
+            # 根据下载图片并根据图片类型裁剪  pil 处理
+            handel_pic_info(page_info)
+            # 处理库存信息
+            handel_stock_inf(page_info[STOCK_INF], page_info[URL_LINK])
+            if os.path.exists("C:\\Users\\Baijb\\Desktop\\产品模板\\"):
+                os.rename("C:\\Users\\Baijb\\Desktop\\产品模板\\", "C:\\Users\\Baijb\\Desktop\\产品" + str(url_idx))
+    # 贴标签
+    # blend_brand_images(r'C:\\Users\\Baijb\\Desktop\\要上的产品\\圣诞款\\BP18\\01主图\\', r'1.jpg')
